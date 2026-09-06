@@ -1,0 +1,23 @@
+{
+  "name":"51 m² top-floor apartment — current working scenario",
+  "area":51,
+  "volume":128,
+  "year":1989,
+  "internalGainsW":3,
+  "thermalBridgeLossWk":0,
+  "envelope":[
+    {"name":"Roof — documented Rc 2.5","area":51,"u":0.4},
+    {"name":"External wall — provisional","area":38,"u":0.35},
+    {"name":"Floor — 5 cm insulation, provisional U","area":51,"u":0.5}
+  ],
+  "windows":[{"name":"HR++ windows","area":9,"u":1.4,"gValue":0.55}],
+  "ventilation":{"ach":0.7,"heatRecovery":0},
+  "heating":{"type":"heatpump","seasonalCOP":3.5,"distributionLossFraction":0.05,"backupFraction":0,"supplyTemperature":35},
+  "dhw":{"people":2,"litresPerPersonDay":35,"efficiency":2.69},
+  "lightingKwhM2":8,
+  "auxKwhM2":4,
+  "coolingKwhM2":0,
+  "cooling":{"type":"heatpump","cop":3},
+  "pv":{"kWp":0,"yieldFactor":1,"selfUse":0.35},
+  "wwsBasePoints":134
+}
