@@ -1,0 +1,19 @@
+{
+  "source": "ISSO 54 v5 Appendix 3A-3K",
+  "tests": ["EPWRealB01","EPWRealD01","EPWRealB02","EPWRealD02","EPWRealB03","EPWRealD04","EPWRealB05","EPWRealB06","EPWRealB07","EPWRealD05","EPURealB01"],
+  "recording_forms": 11,
+  "status": "source-indexed; detailed field mapping remains implementation work",
+  "files": [
+    {"appendix":"3A","test":"EPWRealB01","pages":8,"file":"Bijlage 3A EPWRealB 01 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3B","test":"EPWRealD01","pages":9,"file":"Bijlage 3B EPWRealD 01 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3C","test":"EPWRealB02","pages":9,"file":"Bijlage 3C EPWRealB 02 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3D","test":"EPWRealD02","pages":9,"file":"Bijlage 3D EPWRealD 02 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3E","test":"EPWRealB03","pages":9,"file":"Bijlage 3E EPWRealB 03 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3F","test":"EPWRealD04","pages":9,"file":"Bijlage 3F EPWRealD 04 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3G","test":"EPWRealB05","pages":8,"file":"Bijlage 3G EPWRealB 05 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3H","test":"EPWRealB06","pages":8,"file":"Bijlage 3H EPWRealB 06 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3I","test":"EPWRealB07","pages":8,"file":"Bijlage 3I EPWRealB 07 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3J","test":"EPWRealD05","pages":9,"file":"Bijlage 3J EPWRealD 05 opnameformulier NTA 8800 methode 2020 v2025.pdf"},
+    {"appendix":"3K","test":"EPURealB01","pages":19,"file":"Bijlage 3K EPURealB 01 opnameformulier NTA 8800 methode 2020 v2025.pdf"}
+  ]
+}
