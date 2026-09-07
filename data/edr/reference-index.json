@@ -1,0 +1,20 @@
+{
+  "source_file": "Referentiewaarden Energielabel 2025_correctie 16-04-2026.xlsx",
+  "sha256": "7de9a51aaad2aef44b2296ef9ec9f82b5c70f2cfe8ba2dba1eaba3f9f611a319",
+  "sheets": {
+    "Basistests": {"tests": 323, "output_rows": 28, "populated_values": 9044},
+    "Realistische gebouwen": {"tests": 11, "output_rows": 28, "populated_values": 308},
+    "Maatwerkadvies": {"tests": 52, "output_rows": 37, "populated_values": 987}
+  },
+  "total_tests": 386,
+  "sample": {
+    "EPW001a": {
+      "E;we;H+C;nd;ventsys=C1": 74.04,
+      "E;we;PTot": 104.85,
+      "QH;nd;net": 42.69,
+      "TOjul;max": 8.07,
+      "A_g": 96
+    }
+  },
+  "note": "Full workbook remains a controlled source artifact; repository fixtures should be generated from this source without changing values."
+}
