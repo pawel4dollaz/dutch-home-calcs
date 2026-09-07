@@ -2,9 +2,37 @@
 
 A transparent, offline-capable homeowner tool for exploring Dutch building-energy performance and preparing a reviewable input pack for an EP adviser.
 
-## What it is
+## Status
 
-This repository contains a **screening calculator**, not attested BRL 9501 energy-label software. It intentionally shows its assumptions instead of hiding them behind a single label number.
+**Screening software + attestation-preparation framework. Not BRL 9501-attested.**
+
+The repository now includes an ISSO 54 EDR test manifest, a fail-closed EDR execution harness, and a draft BRL 9501 quality-management system. Missing official reference outputs are explicitly reported as `BLOCKED`; they are never turned into artificial passes.
+
+The current calculation core remains a screening model. It is not yet a complete NTA 8800:2025+C1:2026 implementation and therefore cannot issue an official Dutch energy label.
+
+## EDR / BRL 9501 work
+
+`tests/edr-manifest.json` records the published historical ISSO 54 version 2.0 (May 2022) structure: 277 tests in total, including 219 dwelling tests and 58 utility-building tests. The public document states a historical ±1.0% rejection band. The current 2026 attestation must use the current ISSO 54 version designated with BRL 9501:2026.
+
+`tests/edr-runner.js` executes a representative set of the publicly documented reference-building cases through the current screening kernel. It deliberately reports conformance as `BLOCKED` because the official reference result workbook is a separate controlled document and because the current kernel is not yet complete NTA 8800 software.
+
+`docs/QUALITY-MANUAL.md` is the draft quality system covering requirements traceability, calculation-kernel change control, EDR testing, regression testing, release control, complaints, non-conformities, retention and audit evidence.
+
+`docs/ATTESTATION-READINESS.md` is the BRL 9501 readiness checklist and identifies the remaining technical and organisational gates before an independent attestation application.
+
+Run the ordinary regression tests:
+
+```bash
+npm test
+```
+
+Run the EDR harness:
+
+```bash
+npm run edr
+```
+
+## What it is
 
 The current UI covers:
 
@@ -31,7 +59,7 @@ The project therefore distinguishes three levels:
 
 1. **Exact public-reference checks** — values published by RVO/Huurcommissie are tested exactly.
 2. **Engineering checks** — units, monotonicity and conservation relationships are tested.
-3. **Official conformance** — intentionally marked unverified until machine-readable reference projects from attested software are available.
+3. **Official conformance** — intentionally unverified until the complete current EDR fixtures have been executed and independently assessed.
 
 This distinction is important: a plausible label estimate is not the same thing as an official label.
 
@@ -44,12 +72,6 @@ python3 -m http.server 8080
 ```
 
 Then open `http://localhost:8080/`.
-
-Tests:
-
-```bash
-npm test
-```
 
 ## Current project scenario
 
@@ -79,4 +101,5 @@ These are **screening results, not the apartment's verified official label**. Th
 - BCRG — Vincent declaration: https://mijn.bcrg.nl/media/20220186GK_gelijkwaardigheidsverklaring_Vincent_V45-Combi__06-05-22.pdf
 - BCRG — Flint P40 declaration: https://mijn.bcrg.nl/media/documents/2024/GK/20240324GK.pdf
 - BCRG — Flint P40 + WBL-200 declaration: https://mijn.bcrg.nl/media/documents/2025/GK/20250226GK.pdf
+- ISSO — Publication 54 historical public EDR document: https://documenten.isso.nl/s/Ym8-N6LW2khaIUJL0XEgRaFsscBPV5dn/ISSO%2054%20-%2012-05-2022.pdf
 - OpenAEC NTA reference crates: https://github.com/OpenAEC-Foundation/crates-warehouse
