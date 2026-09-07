@@ -1,0 +1,66 @@
+{
+  "source": {
+    "document": "ISSO Publication 54, version 2.0, May 2022",
+    "url": "https://documenten.isso.nl/s/Ym8-N6LW2khaIUJL0XEgRaFsscBPV5dn/ISSO%2054%20-%2012-05-2022.pdf",
+    "note": "Historical public reference. The current 2026 attestation must use the current ISSO 54 version designated with BRL 9501:2026."
+  },
+  "published_scope": {
+    "dwelling_tests": 219,
+    "utility_tests": 58,
+    "total_tests": 277,
+    "historical_new_tests": 18,
+    "historical_tolerance": "±1.0%"
+  },
+  "groups": [
+    {"prefix":"EPW0","name":"Building / envelope","tests":62},
+    {"prefix":"EPW1","name":"Ventilation","tests":34},
+    {"prefix":"EPW2","name":"Heating","tests":41},
+    {"prefix":"EPW3","name":"Cooling","tests":14},
+    {"prefix":"EPW4","name":"Domestic hot water","tests":53},
+    {"prefix":"EPW5","name":"PV","tests":4},
+    {"prefix":"EPWReal","name":"Realistic dwelling projects","tests":10},
+    {"prefix":"EPU0","name":"Utility general","tests":10},
+    {"prefix":"EPU1","name":"Utility building","tests":3},
+    {"prefix":"EPU2","name":"Utility ventilation","tests":8},
+    {"prefix":"EPU3","name":"Utility heating","tests":10},
+    {"prefix":"EPU4","name":"Utility cooling","tests":3},
+    {"prefix":"EPU5","name":"Utility DHW","tests":6},
+    {"prefix":"EPU6","name":"Utility lighting","tests":12},
+    {"prefix":"EPU7","name":"Utility humidification","tests":4},
+    {"prefix":"EPUReal","name":"Realistic utility project","tests":1}
+  ],
+  "historical_new_tests": [
+    "EPW003c","EPW006h","EPW010a","EPW104g","EPW203p","EPW203q","EPW302c",
+    "EPW406d","EPW406i","EPW406j","EPW406k","EPW406o","EPW406p","EPW406u",
+    "EPW406v","EPW406w","EPW406x","EPU602c","EPURealB01"
+  ],
+  "historical_reference_building": {
+    "id":"EPW001",
+    "year":2021,
+    "geometry":{"width_m":8,"depth_m":6,"height_m":5.4,"volume_m3":259.2,"ag_m2":96,"ao_m2":247.2},
+    "orientation":"south",
+    "windows":{"area_m2":24,"u_window_W_m2K":1.8,"g":0.7},
+    "envelope":[
+      {"name":"roof","area_m2":48,"rc_m2K_W":6,"boundary":"outdoor"},
+      {"name":"ground floor","area_m2":48,"rc_m2K_W":6,"boundary":"ground"},
+      {"name":"south wall","area_m2":19.2,"rc_m2K_W":6,"boundary":"outdoor"},
+      {"name":"east wall","area_m2":32.4,"rc_m2K_W":6,"boundary":"outdoor"},
+      {"name":"west wall","area_m2":32.4,"rc_m2K_W":6,"boundary":"outdoor"},
+      {"name":"north wall","area_m2":43.2,"rc_m2K_W":6,"boundary":"outdoor"}
+    ],
+    "ventilation":{"system":"D.2 balanced WTW","heat_recovery":true,"bypass":true,"duct_class":"LUKA C"},
+    "heating":{"source":"HR107 combi boiler","efficiency":0.95,"supply_c":45,"return_c":40,"emitter":"floor heating"},
+    "dhw":{"source":"HR107 combi boiler","storage":false,"tap_class":"CW5"},
+    "cooling":false,
+    "pv":false
+  },
+  "known_subtests_from_public_document": [
+    {"id":"EPW002a","change":"single glazing, thermally broken metal frame, 1964 building, Rc wall 0.85, roof 0.22, floor 0.15"},
+    {"id":"EPW002b","change":"HR++ glazing, 1995 building, Rc wall/roof/floor 2.5"},
+    {"id":"EPW002c","change":"detailed thermal bridges with specified psi-values"},
+    {"id":"EPW003c","change":"coloured roller shutters, additional resistance 0.2 m2K/W"},
+    {"id":"EPW004a-g","change":"main facade orientation from south through south-east/east/north-east/north/north-west/west/south-west"},
+    {"id":"EPW005a-c","change":"thermal mass Dm 80/180/360 kJ/m2K"},
+    {"id":"EPW006a-e","change":"crawlspace floor boundary variants"}
+  ]
+}
