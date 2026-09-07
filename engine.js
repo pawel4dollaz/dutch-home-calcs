@@ -97,12 +97,18 @@ export function calculate(input){
   const primaryFossil=(gridElec*PRIMARY_ELEC)+(heat.fuel*GAS_PRIMARY);
   const ep2=primaryFossil/area;
   const label=labelFor(ep2);
-  const renewable=(heat.renewableHeat + pv + Math.max(0,pv-exported))/Math.max(1,usefulHeat+water.useful+coolUseful);
+  // PV generation is an energy quantity, not an on-site-use quantity.  `pvUsed`
+  // is already a subset of `pv`; adding it here would count every self-consumed
+  // kWh twice.  Keep the source quantities separate so this screening metric has
+  // a checkable energy balance.  This remains a screening metric, not NTA EP3.
+  const renewableSources={ heatPumpAmbient:heat.renewableHeat, pvGeneration:pv };
+  const renewable=sum(Object.values(renewableSources))/Math.max(1,usefulHeat+water.useful+coolUseful);
   return {
     area, usefulHeat, usefulHeatPerM2:usefulHeat/area,
     transmission:sum(t.losses), ventilation:sum(v.losses), gains:sum(t.gains), ventilationFlow:v.flow,
     heating:heat, dhw:water, lighting, auxiliary:aux, cooling:{useful:coolUseful,electricity:coolingElec},
     electricity:{gross:elecGross,pv,pvUsed,grid:gridElec,export:exported}, primaryFossil, ep2, label,
+    renewableSources,
     wwsEnergyPoints:wwsEnergyPoints(label), wwsTotal:n(input.wwsBasePoints,0)+wwsEnergyPoints(label), renewableShare:clamp(renewable,0,1)
   };
 }

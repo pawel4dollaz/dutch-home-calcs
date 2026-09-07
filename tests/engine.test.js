@@ -20,3 +20,15 @@ test('PV cannot increase grid electricity in the screening model', () => {
   const noPv=calculate(base); const withPv=calculate({...base,pv:{kWp:3,yieldFactor:1,selfUse:.5}});
   assert.ok(withPv.electricity.grid<=noPv.electricity.grid);
 });
+
+test('PV is counted once in the screening renewable-energy balance', () => {
+  const input={area:100,volume:250,internalGainsW:0,envelope:[],windows:[],ventilation:{ach:0,heatRecovery:0},heating:{type:'electric',distributionLossFraction:0},dhw:{people:0,litresPerPersonDay:0,efficiency:1},lightingKwhM2:10,auxKwhM2:0,coolingKwhM2:0,cooling:{type:'electric',cop:1},pv:{kWp:1,yieldFactor:1,selfUse:0.5}};
+  const result=calculate(input);
+  assert.equal(result.electricity.pv,900);
+  assert.equal(result.electricity.pvUsed,450);
+  assert.equal(result.renewableSources.pvGeneration,900);
+  const denominator=Math.max(1,result.usefulHeat+result.dhw.useful+result.cooling.useful);
+  // This identity catches the original `pv + pvUsed` double count even when the
+  // externally reported share is bounded to 1.
+  assert.equal(result.renewableShare,Math.min(1,900/denominator));
+});

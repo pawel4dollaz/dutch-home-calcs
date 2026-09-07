@@ -6,6 +6,8 @@ A transparent, offline-capable homeowner tool for exploring Dutch building-energ
 
 **Screening software + attestation-preparation framework. Not BRL 9501-attested.**
 
+The screening engine's PV renewable-source ledger was corrected on 2026-09-07 (DH-001). This removes double-counting of self-consumed PV from the screening renewable-share output; it does not implement NTA 8800 EP3 or make an EDR case pass. See `reports/DH-001-PV-ACCOUNTING-2026-09-07.md` and `docs/DEFECT-REGISTER.md`.
+
 The repository now includes an ISSO 54 EDR test manifest, a fail-closed EDR execution harness, and a draft BRL 9501 quality-management system. Missing official reference outputs are explicitly reported as `BLOCKED`; they are never turned into artificial passes.
 
 The current calculation core remains a screening model. It is not yet a complete NTA 8800:2025+C1:2026 implementation and therefore cannot issue an official Dutch energy label.
