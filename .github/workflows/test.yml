@@ -18,4 +18,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: Cargo test — pinned NTA kernel boundary
-        run: cargo test --manifest-path rust/Cargo.toml --locked=false
+        shell: bash
+        run: |
+          set +e
+          cargo test --manifest-path rust/Cargo.toml --locked=false 2>&1 | tee cargo-test.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+      - name: Upload cargo failure log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cargo-test-log
+          path: cargo-test.log
