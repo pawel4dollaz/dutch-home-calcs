@@ -198,6 +198,10 @@ At minimum:
 
 External libraries, reference databases and hosted services that can affect a calculation are recorded with version/date. A calculation release must not silently begin using a different external dataset.
 
+The planned NTA kernel currently pins the OpenAEC NTA 8800 crate family to commit `6e8738c075719e2fc8fcf918d969406f98927b07` in `rust/Cargo.toml`. This pin is a supplier/dependency-control record, not an assertion that the upstream project is BRL 9501-attested.
+
+The controlled BouwZo reference workbook is not redistributed in this public repository. Its SHA-256 is recorded in `data/edr/reference-index.json`. `tools/import_edr_reference.py` is the controlled extraction mechanism; it must fail closed on missing sheets, duplicate test IDs or duplicate output posts and must emit the source hash in the generated index.
+
 ## 16. Audit evidence
 
 The following evidence is retained for each release:
@@ -209,7 +213,9 @@ The following evidence is retained for each release:
 - EDR report;
 - reviewer approval;
 - release note;
-- known defect list.
+- known defect list;
+- controlled source-data hashes;
+- dependency revision/lock information.
 
 ## 17. Management review
 
@@ -227,6 +233,6 @@ The review is recorded and produces actions with owners and due dates.
 
 ## 18. Current implementation gap
 
-This document is intentionally ahead of the software. The repository currently has only a partial screening calculation kernel, so the quality system must not be interpreted as evidence of conformity.
+This document is intentionally ahead of the software. The repository currently has only a partial screening calculation kernel, while the new Rust dependency boundary is a foundation for replacing that kernel with a versioned NTA implementation.
 
 The next technical gate is complete NTA implementation followed by execution of the complete current ISSO 54 EDR suite and independent assessment.
