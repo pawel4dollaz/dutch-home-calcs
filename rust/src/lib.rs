@@ -34,11 +34,12 @@ mod tests {
         // Compile-time integration smoke test: these imports only resolve if
         // the pinned OpenAEC NTA crates and their public APIs are available.
         use nta8800_model::time::Month;
-        use nta8800_tables::climate::de_bilt::DE_BILT_OUTDOOR_TEMPERATURE;
+        use nta8800_tables::climate::de_bilt_climate_data;
         use nta8800_transmission::MONTH_HOURS;
 
+        let climate = de_bilt_climate_data();
         assert_eq!(Month::all().len(), 12);
         assert_eq!(MONTH_HOURS.iter().sum::<f64>(), 8760.0);
-        assert!((DE_BILT_OUTDOOR_TEMPERATURE[Month::Januari] - 2.61).abs() < 1e-9);
+        assert!((climate.outdoor_temperature[Month::Januari] - 2.61).abs() < 1e-9);
     }
 }
