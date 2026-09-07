@@ -1,0 +1,17 @@
+{
+  "source": "ISSO 54 v5 Appendices 4-14",
+  "declarations": [
+    {"appendix":"4","tests":["EPW101y","EPW101z"],"bcrg":"20230256GK","product":"Stiebel Eltron VRC-W 400"},
+    {"appendix":"5","tests":["EPW203q"],"bcrg":"20210163GK","product":"Inventum Modul-AIR Solo"},
+    {"appendix":"6","tests":["EPW203t"],"bcrg":"20240026GK","product":"Viessmann Vitocal 252-A AWOT(-M)-E-AC(-AF) 251.A08 (2C) (SP)"},
+    {"appendix":"7","tests":["EPW406r"],"bcrg":"20210410GK","product":"Vaillant geoTHERM VWS 36/4.1 + VIH 75/150 B"},
+    {"appendix":"8","tests":["EPW406s"],"bcrg":"20220040GK","product":"Vaillant VHR 20/26CS/1-5 (N-NL) ecoTEC plus"},
+    {"appendix":"9","tests":["EPW406w"],"bcrg":"20210161GK","product":"Inventum Modul-AIR All-E 180"},
+    {"appendix":"10","tests":["EPW406x"],"bcrg":"20210162GK","product":"Inventum Modul-AIR Red"},
+    {"appendix":"11","tests":["EPW406z"],"bcrg":"20100022GK","product":"ATAG Q25C"},
+    {"appendix":"12","tests":["EPW406aa"],"bcrg":"20230295GK","product":"Panasonic L-series WH-WDG05LE5 + WH-ADC0509L3E5/B"},
+    {"appendix":"13","tests":["EPW406ab"],"bcrg":"20220186GG","product":"Itho Daalderop Vincent V45-combi + WPV 150L"},
+    {"appendix":"14","tests":["EPW501e"],"bcrg":"20230252GK","product":"Jinko Solar JKM470N-60HL4"}
+  ],
+  "status":"source-indexed; product tables must be mapped into the NTA calculation kernel before numerical EDR execution"
+}
