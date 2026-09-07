@@ -11,3 +11,11 @@ jobs:
         with:
           node-version: 22
       - run: npm test
+
+  nta-kernel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cargo test — pinned NTA kernel boundary
+        run: cargo test --manifest-path rust/Cargo.toml --locked=false
