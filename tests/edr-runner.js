@@ -1,9 +1,9 @@
 import { calculate } from '../engine.js';
 import manifest from './edr-manifest.json' with { type: 'json' };
-import { referenceSummary, compareRelative } from './edr-reference.js';
+import { REFERENCE_INDEX, referenceSummary } from './edr-reference.js';
 
 // EDR execution and EDR conformance are intentionally separate. The current engine
-// remains a screening model. The runner now knows the complete ISSO 54 v5 inventory,
+// remains a screening model. The runner knows the complete ISSO 54 v5 inventory,
 // but will not map a screening output to an ISSO post unless that mapping is explicit.
 
 const summary = referenceSummary();
@@ -29,15 +29,23 @@ const screening = calculate(screeningTranslation());
 
 console.log(JSON.stringify({
   source: manifest.source,
-  reference_inventory: summary,
+  reference_workbook: {
+    source_file: REFERENCE_INDEX.source_file,
+    sha256: REFERENCE_INDEX.sha256,
+    inventory: summary
+  },
   current_engine: {
     status: 'SCREENING_ONLY',
     example: { ep2: screening.ep2, label: screening.label, usefulHeat: screening.usefulHeat }
   },
-  edr_gate: compareRelative(101,100),
+  edr_gate: {
+    tolerance: 0.01,
+    rule: 'abs((actual - reference) / reference) <= 0.01 for non-zero reference values',
+    zero_reference_rule: 'absolute deviation <= 0.01 unless the current ISSO 54 specification defines another output-specific rule'
+  },
   conformance: {
     status: 'NOT_READY',
     executable_cases: 0,
-    reason: 'The complete NTA 8800 calculation chain and explicit output mappings are not yet implemented. No screening result is treated as an EDR PASS.'
+    reason: 'The complete NTA 8800 calculation chain, complete input adapters and explicit output mappings are not yet implemented. No screening result is treated as an EDR PASS.'
   }
 }, null, 2));
