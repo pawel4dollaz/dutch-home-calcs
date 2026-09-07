@@ -1,0 +1,25 @@
+[package]
+name = "dutch-home-calcs-nta8800"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[dependencies]
+nta8800-model = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-tables = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-geometry = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-transmission = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-ventilation = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-demand = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-heating = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-cooling = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-dhw = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-lighting = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-automation = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-pv = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-humidity = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+nta8800-ep = { git = "https://github.com/OpenAEC-Foundation/crates-warehouse", rev = "6e8738c075719e2fc8fcf918d969406f98927b07" }
+
+[dev-dependencies]
+serde_json = "1"
