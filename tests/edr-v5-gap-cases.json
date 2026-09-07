@@ -1,0 +1,24 @@
+{
+  "source": "ISSO 54 v5.0, dated 2025-11-14; NTA 8800:2025",
+  "purpose": "Screening fixtures for features explicitly specified by the current EDR document. These are not reference-result fixtures.",
+  "cases": [
+    {"id":"EPW003c","feature":"roller_shutter","additionalResistance_m2K_W":0.2,"operation":"manual"},
+    {"id":"EPW004a","feature":"orientation","mainFacade":"SE"},
+    {"id":"EPW004b","feature":"orientation","mainFacade":"E"},
+    {"id":"EPW004c","feature":"orientation","mainFacade":"NE"},
+    {"id":"EPW004d","feature":"orientation","mainFacade":"N"},
+    {"id":"EPW004e","feature":"orientation","mainFacade":"NW"},
+    {"id":"EPW004f","feature":"orientation","mainFacade":"W"},
+    {"id":"EPW004g","feature":"orientation","mainFacade":"SW"},
+    {"id":"EPW005a","feature":"thermal_mass","Dm_kJ_m2K":80},
+    {"id":"EPW005b","feature":"thermal_mass","Dm_kJ_m2K":180},
+    {"id":"EPW005c","feature":"thermal_mass","Dm_kJ_m2K":360},
+    {"id":"EPW005d","feature":"thermal_mass","Dm_kJ_m2K":180,"note":"light floor/ceiling variant"},
+    {"id":"EPW006a","feature":"ground_boundary","floor_Rc_m2K_W":0.15,"crawlspace_Rbf_m2K_W":6,"crawlspace_openings_m2":0.0012},
+    {"id":"EPW006b","feature":"ground_boundary","floor_Rc_m2K_W":0.15,"crawlspace_Rbf_m2K_W":3.5,"crawlspace_openings_m2":0.0012},
+    {"id":"EPW006c","feature":"ground_boundary","floor_Rc_m2K_W":0.15,"crawlspace_Rbf_m2K_W":0,"crawlspace_openings_m2":0.0012},
+    {"id":"EPW006e","feature":"ground_boundary","floor_Rc_m2K_W":0.15,"crawlspace_Rbf_m2K_W":6,"crawlspace_openings_m2":0.0006},
+    {"id":"EPW007c","feature":"infiltration","qv10_dm3_s_m2":0.2}
+  ],
+  "implementation_note": "The screening engine may represent these features parametrically, but no case is an EDR PASS until the complete NTA calculation and official Referentiewaarden workbook are available."
+}
