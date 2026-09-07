@@ -1,0 +1,66 @@
+{
+  "source": {
+    "document": "ISSO Publication 54, Energie prestatie rekenprogramma's",
+    "version": "5.0",
+    "date": "2025-11-14",
+    "provided_file": "ISSO 54 EDR EPG testen gebouwen voor BRL 9501 NTA 8800_v 5.0_13-02-2026.pdf",
+    "basis": "NTA 8800 (2025), BRL 9501:2026",
+    "reference_results": "separate Excel document named Referentiewaarden; not included in the supplied PDF"
+  },
+  "scope": {
+    "dwelling_base_tests": 264,
+    "dwelling_realistic_tests": 10,
+    "dwelling_mwa_tests": 14,
+    "utility_base_tests": 58,
+    "utility_realistic_tests": 1,
+    "utility_mwa_tests": 34,
+    "total_base_tests": 322,
+    "total_realistic_tests": 11,
+    "total_mwa_tests": 48,
+    "total_tests": 381,
+    "new_base_tests": 20,
+    "new_mwa_tests": 3,
+    "emg_forfaitair_tests": 4
+  },
+  "dwelling_groups": {
+    "EPW001": 4,
+    "EPW0": 76,
+    "EPW1": 38,
+    "EPW2": 54,
+    "EPW3": 15,
+    "EPW4": 69,
+    "EPW5": 8,
+    "EPWReal": 10,
+    "EPW9_MWA": 14
+  },
+  "utility_groups": {
+    "EPU001": 3,
+    "EPU0": 8,
+    "EPU1": 3,
+    "EPU2": 9,
+    "EPU3": 11,
+    "EPU4": 2,
+    "EPU5": 5,
+    "EPU6": 13,
+    "EPU7": 4,
+    "EPUReal": 1,
+    "EPU9_MWA": 34
+  },
+  "new_tests": [
+    "EPW005d", "EPW008f", "EPW012h", "EPW012i", "EPW012j", "EPW012k", "EPW012l", "EPW012m",
+    "EPW203u", "EPW205i", "EPW205j", "EPW206d", "EPW407n", "EPW407o", "EPW407p",
+    "EPW501f", "EPW501g", "EPW501h", "EPU303h", "EPU303i",
+    "EPW907a", "EPW907b", "EPW907c"
+  ],
+  "acceptance": {
+    "maximum_reference_deviation_percent": 1.0,
+    "rule": "A calculated result outside ±1.0% of the applicable reference result fails the test."
+  },
+  "implementation_status": {
+    "test_definitions_available": true,
+    "reference_results_available_in_supplied_pdf": false,
+    "complete_nta_8800_implementation": false,
+    "full_edr_execution": false,
+    "formal_conformance": "BLOCKED"
+  }
+}
