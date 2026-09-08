@@ -80,6 +80,7 @@ pub struct SurfaceInput {
 pub struct OpeningInput {
     pub id: String,
     pub name: String,
+    pub surface_id: Option<String>,
     pub area_m2: f64,
     pub u_value_w_m2k: f64,
     pub g_value: f64,
@@ -297,30 +298,16 @@ impl NtaProjectInput {
     /// instead of being replaced by an undocumented default.
     pub fn validate(&self) -> Result<(), Vec<String>> {
         let mut errors = Vec::new();
-        if self.schema_version.trim().is_empty() {
-            errors.push("schema_version is required".into());
-        }
-        if self.nta_version.trim().is_empty() {
-            errors.push("nta_version is required".into());
-        }
-        if self.building.gross_floor_area_m2 <= 0.0 || !self.building.gross_floor_area_m2.is_finite() {
-            errors.push("building.gross_floor_area_m2 must be finite and > 0".into());
-        }
-        if self.building.volume_m3 <= 0.0 || !self.building.volume_m3.is_finite() {
-            errors.push("building.volume_m3 must be finite and > 0".into());
-        }
+        if self.schema_version.trim().is_empty() { errors.push("schema_version is required".into()); }
+        if self.nta_version.trim().is_empty() { errors.push("nta_version is required".into()); }
+        if self.building.gross_floor_area_m2 <= 0.0 || !self.building.gross_floor_area_m2.is_finite() { errors.push("building.gross_floor_area_m2 must be finite and > 0".into()); }
+        if self.building.volume_m3 <= 0.0 || !self.building.volume_m3.is_finite() { errors.push("building.volume_m3 must be finite and > 0".into()); }
         validate_monthly(&self.climate.outdoor_temperature_c, "climate.outdoor_temperature_c", &mut errors);
         validate_monthly(&self.climate.wind_speed_m_s, "climate.wind_speed_m_s", &mut errors);
-        if self.zones.is_empty() {
-            errors.push("at least one calculation zone is required".into());
-        }
+        if self.zones.is_empty() { errors.push("at least one calculation zone is required".into()); }
         let area_sum: f64 = self.zones.iter().map(|z| z.floor_area_m2).sum();
-        if (area_sum - self.building.gross_floor_area_m2).abs() > 1e-6 {
-            errors.push(format!("zone floor-area sum {area_sum:.6} m² differs from building GFA {:.6} m²", self.building.gross_floor_area_m2));
-        }
-        for zone in &self.zones {
-            validate_zone(zone, &self.constructions, &mut errors);
-        }
+        if (area_sum - self.building.gross_floor_area_m2).abs() > 1e-6 { errors.push(format!("zone floor-area sum {area_sum:.6} m² differs from building GFA {:.6} m²", self.building.gross_floor_area_m2)); }
+        for zone in &self.zones { validate_zone(zone, &self.constructions, &mut errors); }
         for c in &self.constructions {
             if c.id.trim().is_empty() { errors.push("construction id is required".into()); }
             if c.layers.is_empty() { errors.push(format!("construction {} has no layers", c.id)); }
@@ -335,12 +322,8 @@ impl NtaProjectInput {
             validate_fraction(v.heat_recovery_efficiency, "ventilation heat recovery", &v.id, &mut errors);
             validate_optional_nonnegative(v.specific_fan_power_ws_m3, "ventilation SFP", &v.id, &mut errors);
         }
-        for h in &self.systems.heating {
-            if h.efficiency_or_cop <= 0.0 || !h.efficiency_or_cop.is_finite() { errors.push(format!("heating {} efficiency/COP must be > 0", h.id)); }
-        }
-        for c in &self.systems.cooling {
-            if c.efficiency_or_cop <= 0.0 || !c.efficiency_or_cop.is_finite() { errors.push(format!("cooling {} efficiency/COP must be > 0", c.id)); }
-        }
+        for h in &self.systems.heating { if h.efficiency_or_cop <= 0.0 || !h.efficiency_or_cop.is_finite() { errors.push(format!("heating {} efficiency/COP must be > 0", h.id)); } }
+        for c in &self.systems.cooling { if c.efficiency_or_cop <= 0.0 || !c.efficiency_or_cop.is_finite() { errors.push(format!("cooling {} efficiency/COP must be > 0", c.id)); } }
         for d in &self.systems.dhw {
             if d.people < 0.0 || !d.people.is_finite() { errors.push(format!("DHW {} people must be >= 0", d.id)); }
             if d.litres_per_person_day < 0.0 || !d.litres_per_person_day.is_finite() { errors.push(format!("DHW {} litres/person/day must be >= 0", d.id)); }
@@ -374,18 +357,11 @@ fn validate_zone(zone: &ZoneInput, constructions: &[ConstructionInput], errors: 
         if !(0.0..=1.0).contains(&opening.g_value) || !opening.g_value.is_finite() { errors.push(format!("zone {} opening {} g-value must be in [0,1]", zone.id, opening.id)); }
         if !(0.0..=1.0).contains(&opening.shading_factor) || !opening.shading_factor.is_finite() { errors.push(format!("zone {} opening {} shading factor must be in [0,1]", zone.id, opening.id)); }
         if !(0.0..=1.0).contains(&opening.frame_fraction) || !opening.frame_fraction.is_finite() { errors.push(format!("zone {} opening {} frame fraction must be in [0,1]", zone.id, opening.id)); }
+        if let Some(surface_id) = &opening.surface_id { if !zone.surfaces.iter().any(|s| s.id == *surface_id) { errors.push(format!("zone {} opening {} references unknown surface {}", zone.id, opening.id, surface_id)); } }
     }
 }
 
-fn validate_monthly(values: &MonthlyValues, name: &str, errors: &mut Vec<String>) {
-    if values.iter().any(|x| !x.is_finite()) { errors.push(format!("{name} contains non-finite values")); }
-}
-fn validate_fraction(value: Option<f64>, name: &str, id: &str, errors: &mut Vec<String>) {
-    if let Some(x) = value { if !(0.0..=1.0).contains(&x) || !x.is_finite() { errors.push(format!("{name} for {id} must be in [0,1]")); } }
-}
-fn validate_optional_nonnegative(value: Option<f64>, name: &str, id: &str, errors: &mut Vec<String>) {
-    if let Some(x) = value { if x < 0.0 || !x.is_finite() { errors.push(format!("{name} for {id} must be >= 0")); } }
-}
-fn validate_scalar_nonnegative(value: f64, name: &str, errors: &mut Vec<String>) {
-    if value < 0.0 || !value.is_finite() { errors.push(format!("{name} must be >= 0")); }
-}
+fn validate_monthly(values: &MonthlyValues, name: &str, errors: &mut Vec<String>) { if values.iter().any(|x| !x.is_finite()) { errors.push(format!("{name} contains non-finite values")); } }
+fn validate_fraction(value: Option<f64>, name: &str, id: &str, errors: &mut Vec<String>) { if let Some(x) = value { if !(0.0..=1.0).contains(&x) || !x.is_finite() { errors.push(format!("{name} for {id} must be in [0,1]")); } } }
+fn validate_optional_nonnegative(value: Option<f64>, name: &str, id: &str, errors: &mut Vec<String>) { if let Some(x) = value { if x < 0.0 || !x.is_finite() { errors.push(format!("{name} for {id} must be >= 0")); } } }
+fn validate_scalar_nonnegative(value: f64, name: &str, errors: &mut Vec<String>) { if value < 0.0 || !value.is_finite() { errors.push(format!("{name} must be >= 0")); } }

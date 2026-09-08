@@ -6,6 +6,7 @@
 //! release cannot silently change because of a moving git dependency.
 
 pub mod input;
+pub mod kernel;
 
 /// Exact upstream revision used by this kernel boundary.
 pub const OPENAEC_REV: &str = "6e8738c075719e2fc8fcf918d969406f98927b07";
@@ -18,9 +19,7 @@ pub const INPUT_SCHEMA_VERSION: &str = "0.2.0";
 
 /// Dependency manifest used for traceability and QMS review.
 #[must_use]
-pub const fn kernel_manifest() -> (&'static str, &'static str) {
-    (NTA_VERSION, OPENAEC_REV)
-}
+pub const fn kernel_manifest() -> (&'static str, &'static str) { (NTA_VERSION, OPENAEC_REV) }
 
 #[cfg(test)]
 mod tests {
@@ -35,18 +34,13 @@ mod tests {
     }
 
     #[test]
-    fn input_schema_version_is_explicit() {
-        assert_eq!(INPUT_SCHEMA_VERSION, "0.2.0");
-    }
+    fn input_schema_version_is_explicit() { assert_eq!(INPUT_SCHEMA_VERSION, "0.2.0"); }
 
     #[test]
     fn upstream_natural_units_are_available() {
-        // Compile-time integration smoke test: these imports only resolve if
-        // the pinned OpenAEC NTA crates and their public APIs are available.
         use nta8800_model::time::Month;
         use nta8800_tables::climate::de_bilt_climate_data;
         use nta8800_transmission::MONTH_HOURS;
-
         let climate = de_bilt_climate_data();
         assert_eq!(Month::all().len(), 12);
         assert_eq!(MONTH_HOURS.iter().sum::<f64>(), 8760.0);
