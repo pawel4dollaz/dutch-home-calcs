@@ -27,8 +27,8 @@ pub enum ServiceError {
 }
 
 /// Convert building demand into downstream service ledgers and run the pinned
-/// OpenAEC H.5 EP integration. This adapter deliberately exposes its remaining
-/// V1 limitations instead of presenting them as attested NTA calculations.
+/// OpenAEC H.5 EP integration. The upstream EP crate is used unchanged, while
+/// service adapters expose any remaining V1 limitations rather than hiding them.
 pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> Result<ServiceResult, ServiceError> {
     project.validate().map_err(|e| ServiceError::InvalidInput(e.join("; ")))?;
     let heating_system = project.systems.heating.first().ok_or(ServiceError::MissingSystem("heating"))?;
@@ -56,14 +56,16 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
         }
     };
 
-    // Explicit water-energy ledger. The complete NTA H.12 draw-off profile,
-    // storage and distribution procedure still needs to replace this adapter.
-    let water_volume_l_day = dhw_system.people * dhw_system.litres_per_person_day;
-    let dhw_heat_mj = water_volume_l_day * 4.186 * 45.0 * 365.0 / 1000.0;
+    // NTA 8800:2025+C1:2026 §13.2.3.1: 856 kWh/year per resident for
+    // residential DHW. The project schema permits an explicit resident count;
+    // unlike the former thermodynamic proxy, this uses the published NTA V1
+    // annual demand basis. Storage losses remain an explicit addition until the
+    // complete §13.6 storage model is wired through.
+    let water_demand_mj = dhw_system.people * 856.0 * 3.6;
     let storage_loss_mj = dhw_system.storage_loss_kwh_day.unwrap_or(0.0) * 3.6 * 365.0;
     let dhw_eta = dhw_system.efficiency_or_cop * (1.0 - dhw_system.distribution_loss_fraction.unwrap_or(0.0));
     if dhw_eta <= 0.0 || !dhw_eta.is_finite() { return Err(ServiceError::InvalidInput("DHW efficiency/COP invalid".into())); }
-    let dhw_mj = (dhw_heat_mj + storage_loss_mj) / dhw_eta;
+    let dhw_mj = (water_demand_mj + storage_loss_mj) / dhw_eta;
 
     let lighting = project.systems.lighting.as_ref().ok_or(ServiceError::MissingSystem("lighting"))?;
     let lighting_kwh_m2 = match lighting.method {
