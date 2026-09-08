@@ -5,6 +5,7 @@
 //! upstream OpenAEC crates are pinned to one immutable commit so that a kernel
 //! release cannot silently change because of a moving git dependency.
 
+pub mod demand;
 pub mod input;
 pub mod kernel;
 pub mod ventilation;
