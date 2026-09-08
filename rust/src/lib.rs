@@ -5,11 +5,16 @@
 //! upstream OpenAEC crates are pinned to one immutable commit so that a kernel
 //! release cannot silently change because of a moving git dependency.
 
+pub mod input;
+
 /// Exact upstream revision used by this kernel boundary.
 pub const OPENAEC_REV: &str = "6e8738c075719e2fc8fcf918d969406f98927b07";
 
 /// Current NTA target for this project.
 pub const NTA_VERSION: &str = "NTA 8800:2025+C1:2026";
+
+/// Current project input schema revision.
+pub const INPUT_SCHEMA_VERSION: &str = "0.2.0";
 
 /// Dependency manifest used for traceability and QMS review.
 #[must_use]
@@ -27,6 +32,11 @@ mod tests {
         assert_eq!(nta, "NTA 8800:2025+C1:2026");
         assert_eq!(rev.len(), 40);
         assert!(rev.bytes().all(|b| b.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn input_schema_version_is_explicit() {
+        assert_eq!(INPUT_SCHEMA_VERSION, "0.2.0");
     }
 
     #[test]
