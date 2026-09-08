@@ -6,7 +6,7 @@ license = "MIT"
 publish = false
 
 [features]
-default = ["core"]
+default = ["full"]
 core = []
 full = [
   "dep:nta8800-ventilation",
