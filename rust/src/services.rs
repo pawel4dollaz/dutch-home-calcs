@@ -26,10 +26,9 @@ pub enum ServiceError {
     Ep(nta8800_ep::EpError),
 }
 
-/// Convert building demand into heating, cooling, DHW, lighting, auxiliary and
-/// PV ledgers, then run the pinned OpenAEC H.5 EP integration. The upstream EP
-/// crate is used unchanged; its declared V1 scope and data-version limitations
-/// therefore remain visible to QMS reviewers.
+/// Convert building demand into downstream service ledgers and run the pinned
+/// OpenAEC H.5 EP integration. This adapter deliberately exposes its remaining
+/// V1 limitations instead of presenting them as attested NTA calculations.
 pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> Result<ServiceResult, ServiceError> {
     project.validate().map_err(|e| ServiceError::InvalidInput(e.join("; ")))?;
     let heating_system = project.systems.heating.first().ok_or(ServiceError::MissingSystem("heating"))?;
@@ -38,15 +37,18 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
 
     let heating_eta = heating_system.efficiency_or_cop
         * heating_system.distribution_loss_fraction.map(|x| 1.0 - x).unwrap_or(1.0)
-        * heating_system.emitter_efficiency.unwrap_or(1.0)
-        * (1.0 - heating_system.backup_fraction.unwrap_or(0.0));
+        * heating_system.emitter_efficiency.unwrap_or(1.0);
     if heating_eta <= 0.0 || !heating_eta.is_finite() {
         return Err(ServiceError::InvalidInput("heating total efficiency/COP must be finite and > 0".into()));
+    }
+    if heating_system.backup_fraction.unwrap_or(0.0) != 0.0 {
+        return Err(ServiceError::InvalidInput("non-zero heating backup_fraction requires an explicit hybrid/backup model".into()));
     }
     let heating_mj = demand.annual_heating_mj / heating_eta;
 
     let cooling_mj = match cooling_system {
-        None | Some(s) if s.system_type == CoolingSystemType::None => 0.0,
+        None => 0.0,
+        Some(s) if s.system_type == CoolingSystemType::None => 0.0,
         Some(s) => {
             let eta = s.efficiency_or_cop * (1.0 - s.distribution_loss_fraction.unwrap_or(0.0));
             if eta <= 0.0 || !eta.is_finite() { return Err(ServiceError::InvalidInput("cooling efficiency/COP invalid".into())); }
@@ -54,9 +56,8 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
         }
     };
 
-    // Explicit hot-water energy balance. This is an engineering ledger until
-    // the complete NTA H.12 demand profile/storage-loss procedure is wired in.
-    // 4.186 kJ/(kg·K), 45 K temperature rise, 365 days/year.
+    // Explicit water-energy ledger. The complete NTA H.12 draw-off profile,
+    // storage and distribution procedure still needs to replace this adapter.
     let water_volume_l_day = dhw_system.people * dhw_system.litres_per_person_day;
     let dhw_heat_mj = water_volume_l_day * 4.186 * 45.0 * 365.0 / 1000.0;
     let storage_loss_mj = dhw_system.storage_loss_kwh_day.unwrap_or(0.0) * 3.6 * 365.0;
@@ -84,13 +85,8 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
     }).sum::<f64>();
 
     let mut ep = nta8800_ep::EpInputs {
-        heating: HashMap::new(),
-        cooling: HashMap::new(),
-        dhw: HashMap::new(),
-        lighting: HashMap::new(),
-        ventilation_aux: HashMap::new(),
-        automation: HashMap::new(),
-        pv_yield: pv_yield_mj,
+        heating: HashMap::new(), cooling: HashMap::new(), dhw: HashMap::new(), lighting: HashMap::new(),
+        ventilation_aux: HashMap::new(), automation: HashMap::new(), pv_yield: pv_yield_mj,
         building_area: nta8800_ep::BuildingArea { a_g: area },
     };
     ep.heating.insert(heating_carrier(heating_system.system_type), heating_mj);
@@ -100,8 +96,8 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
     if ventilation_aux_mj > 0.0 { ep.ventilation_aux.insert(nta8800_ep::EnergyCarrier::Elektriciteit, ventilation_aux_mj); }
     if automation_mj > 0.0 { ep.automation.insert(nta8800_ep::EnergyCarrier::Elektriciteit, automation_mj); }
 
-    let function = usage_function(project.zones.first().map(|z| z.usage).ok_or(ServiceError::InvalidInput("no zone".into()))?);
-    let result = nta8800_ep::calculate_ep_score(&ep, function).map_err(ServiceError::Ep)?;
+    let first_zone = project.zones.first().ok_or(ServiceError::InvalidInput("no zone".into()))?;
+    let result = nta8800_ep::calculate_ep_score(&ep, usage_function(first_zone.usage)).map_err(ServiceError::Ep)?;
     Ok(ServiceResult { heating_mj, cooling_mj, dhw_mj, lighting_mj, ventilation_aux_mj, automation_mj, pv_yield_mj, ep: result })
 }
 
