@@ -30,15 +30,11 @@ fn slab_on_ground_conductance(floor_area_m2: f64, perimeter_m: f64, floor_u_valu
     const R_SE_GROUND_M2K_PER_W: f64 = 0.04;
     const WALL_THICKNESS_M: f64 = 0.5;
 
-    // Formula 8.30: characteristic floor width B'_f.
     let b_prime = floor_area_m2 / (0.5 * perimeter_m);
-
-    // Formula 8.32: equivalent floor thickness d_f;equi.
     let r_si_plus_rc = 1.0 / floor_u_value;
     let d_equi =
         WALL_THICKNESS_M + LAMBDA_GROUND_W_PER_MK * (r_si_plus_rc + R_SE_GROUND_M2K_PER_W);
 
-    // Formulas 8.40/8.41: U_fl for floor directly on ground.
     let u_fl = if d_equi < b_prime {
         (2.0 * LAMBDA_GROUND_W_PER_MK / (std::f64::consts::PI * b_prime + d_equi))
             * (std::f64::consts::PI * b_prime / d_equi + 1.0).ln()
@@ -46,7 +42,6 @@ fn slab_on_ground_conductance(floor_area_m2: f64, perimeter_m: f64, floor_u_valu
         LAMBDA_GROUND_W_PER_MK / (0.457 * b_prime + d_equi)
     };
 
-    // Formula 8.36: H_g = A_fl · U_fl.
     floor_area_m2 * u_fl
 }
 
@@ -67,8 +62,6 @@ fn zone() -> Rekenzone {
 }
 
 fn transmission_elements() -> Vec<TransmissionElement> {
-    // EPW001a: Ao = 247.2 m². Wall areas are gross external areas; 24 m²
-    // windows occupy the south wall, leaving 19.2 m² opaque south wall.
     vec![
         TransmissionElement { id: "dak".into(), area: 48.0, u_value: 0.162, boundary_type: BoundaryType::Outdoor, construction_id: None },
         TransmissionElement { id: "vloer".into(), area: 48.0, u_value: 1.0 / (6.0 + 0.21), boundary_type: BoundaryType::Ground, construction_id: None },
@@ -104,10 +97,6 @@ fn epw001a_transmission_ventilation_demand_probe() {
     let climate = de_bilt_climate_data();
     let indoor = MonthlyProfile::from_constant(20.0);
 
-    // EPW001a floor: 48 m², exposed perimeter 28 m, Rc = 6.0 m²K/W.
-    // The pinned warehouse snapshot did not yet expose the P/A ground model;
-    // use the newer OpenAEC implementation verbatim rather than fitting H_g
-    // to the EDR result.
     let floor_u = 1.0 / (6.0 + 0.21);
     let h_g_an = slab_on_ground_conductance(48.0, 28.0, floor_u);
 
@@ -124,10 +113,6 @@ fn epw001a_transmission_ventilation_demand_probe() {
     )
     .expect("EPW001a transmission calculation should succeed");
 
-    // EPW001a D.2 balanced ventilation. The standard dwelling design flow
-    // used by the first probe is 0.9 dm³/(s·m²) × Ag = 86.4 dm³/s = 311.04 m³/h.
-    // Infiltration remains isolated at zero until qv10 -> qV;lea and the §11
-    // pressure-balance procedure are implemented; it must not be tuned to fit.
     let airflow = AirFlow::new(311.04, 311.04, 0.0);
     let wtw = WtwSpecification::new(0.80, 0.45 / 3.6, true);
     let ventilation = calculate_ventilation(
@@ -166,19 +151,16 @@ fn epw001a_transmission_ventilation_demand_probe() {
     let reference_qh_per_m2 = 42.69_f64;
     let relative_error = (qh_per_m2 - reference_qh_per_m2).abs() / reference_qh_per_m2;
 
-    println!("EPW001a diagnostic");
-    println!("  H_D = {:.6} W/K", transmission.h_d);
-    println!("  H_g;an = {:.6} W/K (NTA §8.3 P/A model)", transmission.h_g_an);
-    println!("  Q_T;an = {:.6} MJ", transmission.annual_q_t);
-    println!("  Q_V;an = {:.6} MJ", ventilation.annual_q_v);
-    println!("  W_fan;an = {:.6} MJ", ventilation.annual_w_fan);
-    println!("  Q_H;nd;an = {:.6} kWh", qh_kwh);
-    println!("  Q_H;nd;net = {:.6} kWh/m²", qh_per_m2);
-    println!("  EDR reference Q_H;nd;net = {:.6} kWh/m²", reference_qh_per_m2);
-    println!("  relative error = {:.3}%", relative_error * 100.0);
-
-    // Gate remains intentionally disabled until the remaining documented NTA
-    // gaps (notably infiltration/pressure balance and any downstream demand
-    // discrepancies) are resolved against the EDR reference.
-    assert!(qh_per_m2.is_finite() && qh_per_m2 > 0.0);
+    panic!(
+        "EPW001a diagnostic: H_D={:.6} W/K; H_g={:.6} W/K; Q_T;an={:.6} MJ; Q_V;an={:.6} MJ; W_fan;an={:.6} MJ; Q_H;nd;an={:.6} kWh; Q_H;nd;net={:.6} kWh/m²; reference={:.6}; error={:.3}%",
+        transmission.h_d,
+        transmission.h_g_an,
+        transmission.annual_q_t,
+        ventilation.annual_q_v,
+        ventilation.annual_w_fan,
+        qh_kwh,
+        qh_per_m2,
+        reference_qh_per_m2,
+        relative_error * 100.0,
+    );
 }
