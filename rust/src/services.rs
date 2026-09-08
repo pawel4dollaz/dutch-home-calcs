@@ -23,17 +23,27 @@ pub enum ServiceError {
     InvalidInput(String),
     MissingSystem(&'static str),
     MissingLightingAnnualEnergy,
+    MissingPvYield(String),
+    UnsupportedHumidity,
+    UnsupportedAutomationEnergy,
     Ep(nta8800_ep::EpError),
 }
 
 /// Convert building demand into downstream service ledgers and run the pinned
 /// OpenAEC H.5 EP integration. The upstream EP crate is used unchanged, while
-/// service adapters expose any remaining V1 limitations rather than hiding them.
+/// service adapters expose remaining V1 limitations instead of hiding them.
 pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> Result<ServiceResult, ServiceError> {
     project.validate().map_err(|e| ServiceError::InvalidInput(e.join("; ")))?;
     let heating_system = project.systems.heating.first().ok_or(ServiceError::MissingSystem("heating"))?;
     let cooling_system = project.systems.cooling.first();
     let dhw_system = project.systems.dhw.first().ok_or(ServiceError::MissingSystem("dhw"))?;
+
+    if project.systems.humidity.as_ref().is_some_and(|h| h.enabled) {
+        return Err(ServiceError::UnsupportedHumidity);
+    }
+    if project.systems.automation.is_some() {
+        return Err(ServiceError::UnsupportedAutomationEnergy);
+    }
 
     let heating_eta = heating_system.efficiency_or_cop
         * heating_system.distribution_loss_fraction.map(|x| 1.0 - x).unwrap_or(1.0)
@@ -57,10 +67,8 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
     };
 
     // NTA 8800:2025+C1:2026 §13.2.3.1: 856 kWh/year per resident for
-    // residential DHW. The project schema permits an explicit resident count;
-    // unlike the former thermodynamic proxy, this uses the published NTA V1
-    // annual demand basis. Storage losses remain an explicit addition until the
-    // complete §13.6 storage model is wired through.
+    // residential DHW. Storage losses remain explicit until the complete §13.6
+    // storage-vessel model is connected.
     let water_demand_mj = dhw_system.people * 856.0 * 3.6;
     let storage_loss_mj = dhw_system.storage_loss_kwh_day.unwrap_or(0.0) * 3.6 * 365.0;
     let dhw_eta = dhw_system.efficiency_or_cop * (1.0 - dhw_system.distribution_loss_fraction.unwrap_or(0.0));
@@ -68,8 +76,20 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
     let dhw_mj = (water_demand_mj + storage_loss_mj) / dhw_eta;
 
     let lighting = project.systems.lighting.as_ref().ok_or(ServiceError::MissingSystem("lighting"))?;
+    let first_zone = project.zones.first().ok_or(ServiceError::InvalidInput("no zone".into()))?;
     let lighting_kwh_m2 = match lighting.method {
-        LightingMethod::ExplicitAnnual | LightingMethod::Nta8800 => lighting.annual_kwh_m2.ok_or(ServiceError::MissingLightingAnnualEnergy)?,
+        LightingMethod::ExplicitAnnual => lighting.annual_kwh_m2.ok_or(ServiceError::MissingLightingAnnualEnergy)?,
+        LightingMethod::Nta8800 => {
+            // P_n × F_u × F_d × F_c × A × 8760 × 0.0036 gives MJ/year.
+            // These are the pinned OpenAEC V1 H.14 forfaitaire inputs.
+            let u = usage_function(first_zone.usage);
+            let (p_n, t_d, t_n) = nta8800_lighting_details(u);
+            let f_u = (t_d + t_n) / 8760.0;
+            let f_d = lighting.control_factor.map(|_| 1.0).unwrap_or(1.0);
+            let f_c = lighting.control_factor.unwrap_or(1.0);
+            let annual_mj = p_n * f_u * f_d * f_c * project.building.gross_floor_area_m2 * 8760.0 * 0.0036;
+            annual_mj / (project.building.gross_floor_area_m2 * 3.6)
+        }
     };
     if lighting_kwh_m2 < 0.0 || !lighting_kwh_m2.is_finite() { return Err(ServiceError::InvalidInput("lighting annual energy invalid".into())); }
     let area = project.building.gross_floor_area_m2;
@@ -82,9 +102,10 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
     }).sum::<f64>() * 3.6;
     let automation_mj = 0.0;
     let pv_yield_mj = project.systems.pv.iter().map(|p| {
-        let annual_kwh = p.peak_kwp * p.annual_yield_kwh_per_kwp.unwrap_or(0.0) * p.shading_factor;
-        annual_kwh * 3.6
-    }).sum::<f64>();
+        if p.peak_kwp == 0.0 { return Ok(0.0); }
+        let yield_kwh = p.annual_yield_kwh_per_kwp.ok_or_else(|| ServiceError::MissingPvYield(p.id.clone()))?;
+        Ok(p.peak_kwp * yield_kwh * p.shading_factor * 3.6)
+    }).collect::<Result<Vec<_>, ServiceError>>()?.into_iter().sum();
 
     let mut ep = nta8800_ep::EpInputs {
         heating: HashMap::new(), cooling: HashMap::new(), dhw: HashMap::new(), lighting: HashMap::new(),
@@ -96,11 +117,24 @@ pub fn calculate_services(project: &NtaProjectInput, demand: &DemandResult) -> R
     ep.dhw.insert(dhw_carrier(dhw_system.system_type), dhw_mj);
     ep.lighting.insert(nta8800_ep::EnergyCarrier::Elektriciteit, lighting_mj);
     if ventilation_aux_mj > 0.0 { ep.ventilation_aux.insert(nta8800_ep::EnergyCarrier::Elektriciteit, ventilation_aux_mj); }
-    if automation_mj > 0.0 { ep.automation.insert(nta8800_ep::EnergyCarrier::Elektriciteit, automation_mj); }
 
-    let first_zone = project.zones.first().ok_or(ServiceError::InvalidInput("no zone".into()))?;
     let result = nta8800_ep::calculate_ep_score(&ep, usage_function(first_zone.usage)).map_err(ServiceError::Ep)?;
     Ok(ServiceResult { heating_mj, cooling_mj, dhw_mj, lighting_mj, ventilation_aux_mj, automation_mj, pv_yield_mj, ep: result })
+}
+
+fn nta8800_lighting_details(u: nta8800_model::zoning::UsageFunction) -> (f64, f64, f64) {
+    match u {
+        nta8800_model::zoning::UsageFunction::Woonfunctie => (5000.0 / 8760.0, 8760.0, 0.0),
+        nta8800_model::zoning::UsageFunction::Bijeenkomstfunctie
+        | nta8800_model::zoning::UsageFunction::Kantoorfunctie
+        | nta8800_model::zoning::UsageFunction::Gezondheidszorgfunctie
+        | nta8800_model::zoning::UsageFunction::Industriefunctie
+        | nta8800_model::zoning::UsageFunction::OverigeGebruiksfunctie => (16.0, 2200.0, 300.0),
+        nta8800_model::zoning::UsageFunction::Onderwijsfunctie => (16.0, 1600.0, 300.0),
+        nta8800_model::zoning::UsageFunction::Sportfunctie => (16.0, 2200.0, 800.0),
+        nta8800_model::zoning::UsageFunction::Celfunctie | nta8800_model::zoning::UsageFunction::Logiesfunctie => (17.0, 4000.0, 1000.0),
+        nta8800_model::zoning::UsageFunction::Winkelfunctie => (30.0, 2700.0, 400.0),
+    }
 }
 
 fn heating_carrier(t: HeatingSystemType) -> nta8800_ep::EnergyCarrier {
