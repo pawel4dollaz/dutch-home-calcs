@@ -43,8 +43,6 @@ fn transmission_elements() -> Vec<TransmissionElement> {
         TransmissionElement { id: "gevel-west".into(), area: 32.4, u_value: 0.162, boundary_type: BoundaryType::Outdoor, construction_id: None },
         TransmissionElement { id: "gevel-oost".into(), area: 32.4, u_value: 0.162, boundary_type: BoundaryType::Outdoor, construction_id: None },
         TransmissionElement { id: "gevel-noord".into(), area: 43.2, u_value: 0.162, boundary_type: BoundaryType::Outdoor, construction_id: None },
-        // The four windows are supplied separately to demand for solar gains,
-        // but their U-value must also be part of H_D.
         TransmissionElement { id: "ramen-zuid".into(), area: 24.0, u_value: 1.8, boundary_type: BoundaryType::Outdoor, construction_id: None },
     ]
 }
@@ -123,7 +121,7 @@ fn epw001a_transmission_ventilation_demand_probe() {
         heating_sp,
         cooling_sp,
         &internal,
-        ThermalMassInput::custom(450.0),
+        ThermalMassInput::zwaar_massief(),
         1.0,
     )
     .expect("EPW001a demand calculation should succeed");
@@ -144,10 +142,7 @@ fn epw001a_transmission_ventilation_demand_probe() {
     println!("  EDR reference Q_H;nd;net = {:.6} kWh/m²", reference_qh_per_m2);
     println!("  relative error = {:.3}%", relative_error * 100.0);
 
-    // The first executable gate is only that the complete real calculation
-    // chain is numerically finite and produces positive winter demand. The
-    // 1% gate will be enabled after the two explicitly documented V1 gaps
-    // (ground transmission and qv10 -> infiltration) are replaced by the
-    // authoritative NTA procedures.
+    // First gate: the real chain is executable and finite. The 1% gate is
+    // deliberately not enabled until the documented V1 gaps are replaced.
     assert!(qh_per_m2.is_finite() && qh_per_m2 > 0.0);
 }
