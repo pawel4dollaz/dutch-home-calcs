@@ -1,10 +1,10 @@
 //! EPW001a probe: exercise the real OpenAEC transmission -> ventilation -> demand APIs.
 //!
-//! This is deliberately a diagnostic probe, not a conformance assertion yet.
-//! EPW001a is the cleanest first EDR case: one zone, known geometry, four south
-//! windows, Rc 6 envelope, ground floor, D.2 balanced ventilation with WTW.
-//! The test prints intermediate quantities so CI can expose the first numerical
-//! gap before we encode a 1% acceptance gate.
+//! This remains a diagnostic probe, not a conformance assertion yet. The first
+//! iteration exposed two consumer-side omissions: ground conductance and
+//! infiltration. The ground term is now implemented from the authoritative
+//! OpenAEC upstream P/A procedure (NTA 8800 §8.3.2.2–§8.3.4.1). Infiltration
+//! remains isolated until the full §11 pressure-balance procedure is wired.
 
 use std::collections::HashMap;
 
@@ -16,6 +16,39 @@ use nta8800_model::zoning::{Rekenzone, UsageFunction};
 use nta8800_tables::climate::de_bilt::de_bilt_climate_data;
 use nta8800_transmission::{calculate_transmission, BoundaryType, TransmissionElement};
 use nta8800_ventilation::{calculate_ventilation, AirFlow, VentilationSystem, WtwSpecification};
+
+/// Authoritative OpenAEC implementation of NTA 8800 §8.3.2.2–§8.3.4.1 for a
+/// floor directly on ground. This is copied from the newer OpenAEC
+/// open-heatloss-studio implementation because the pinned crates-warehouse
+/// snapshot predates that correction.
+fn slab_on_ground_conductance(floor_area_m2: f64, perimeter_m: f64, floor_u_value: f64) -> f64 {
+    if !(floor_area_m2 > 0.0 && perimeter_m > 0.0 && floor_u_value > 0.0) {
+        return 0.0;
+    }
+
+    const LAMBDA_GROUND_W_PER_MK: f64 = 2.0;
+    const R_SE_GROUND_M2K_PER_W: f64 = 0.04;
+    const WALL_THICKNESS_M: f64 = 0.5;
+
+    // Formula 8.30: characteristic floor width B'_f.
+    let b_prime = floor_area_m2 / (0.5 * perimeter_m);
+
+    // Formula 8.32: equivalent floor thickness d_f;equi.
+    let r_si_plus_rc = 1.0 / floor_u_value;
+    let d_equi =
+        WALL_THICKNESS_M + LAMBDA_GROUND_W_PER_MK * (r_si_plus_rc + R_SE_GROUND_M2K_PER_W);
+
+    // Formulas 8.40/8.41: U_fl for floor directly on ground.
+    let u_fl = if d_equi < b_prime {
+        (2.0 * LAMBDA_GROUND_W_PER_MK / (std::f64::consts::PI * b_prime + d_equi))
+            * (std::f64::consts::PI * b_prime / d_equi + 1.0).ln()
+    } else {
+        LAMBDA_GROUND_W_PER_MK / (0.457 * b_prime + d_equi)
+    };
+
+    // Formula 8.36: H_g = A_fl · U_fl.
+    floor_area_m2 * u_fl
+}
 
 fn zone() -> Rekenzone {
     Rekenzone {
@@ -71,10 +104,13 @@ fn epw001a_transmission_ventilation_demand_probe() {
     let climate = de_bilt_climate_data();
     let indoor = MonthlyProfile::from_constant(20.0);
 
-    // EPW001a specifies the NTA ground-contact floor but the pinned OpenAEC
-    // V1 transmission API intentionally leaves the §8.3 ground coefficient to
-    // the consumer. Keep it explicit at zero in this first probe rather than
-    // inventing a ground model; the printed delta identifies this gap.
+    // EPW001a floor: 48 m², exposed perimeter 28 m, Rc = 6.0 m²K/W.
+    // The pinned warehouse snapshot did not yet expose the P/A ground model;
+    // use the newer OpenAEC implementation verbatim rather than fitting H_g
+    // to the EDR result.
+    let floor_u = 1.0 / (6.0 + 0.21);
+    let h_g_an = slab_on_ground_conductance(48.0, 28.0, floor_u);
+
     let transmission = calculate_transmission(
         &zone,
         &transmission_elements(),
@@ -82,17 +118,16 @@ fn epw001a_transmission_ventilation_demand_probe() {
         &[],
         &indoor,
         &climate,
-        0.0,
+        h_g_an,
         &HashMap::new(),
         &HashMap::new(),
     )
     .expect("EPW001a transmission calculation should succeed");
 
-    // EPW001a does not provide a measured ventilation flow. For this probe use
-    // the dwelling design flow 0.9 dm³/(s·m²) × Ag = 86.4 dm³/s = 311.04 m³/h.
-    // The D.2 WTW is represented explicitly. Infiltration is kept at zero in
-    // this first probe because qv10 -> qV;lea requires the NTA §11 pressure/
-    // resistance procedure and must not be guessed here.
+    // EPW001a D.2 balanced ventilation. The standard dwelling design flow
+    // used by the first probe is 0.9 dm³/(s·m²) × Ag = 86.4 dm³/s = 311.04 m³/h.
+    // Infiltration remains isolated at zero until qv10 -> qV;lea and the §11
+    // pressure-balance procedure are implemented; it must not be tuned to fit.
     let airflow = AirFlow::new(311.04, 311.04, 0.0);
     let wtw = WtwSpecification::new(0.80, 0.45 / 3.6, true);
     let ventilation = calculate_ventilation(
@@ -133,7 +168,7 @@ fn epw001a_transmission_ventilation_demand_probe() {
 
     println!("EPW001a diagnostic");
     println!("  H_D = {:.6} W/K", transmission.h_d);
-    println!("  H_g;an supplied = 0.0 W/K (known V1 gap)");
+    println!("  H_g;an = {:.6} W/K (NTA §8.3 P/A model)", transmission.h_g_an);
     println!("  Q_T;an = {:.6} MJ", transmission.annual_q_t);
     println!("  Q_V;an = {:.6} MJ", ventilation.annual_q_v);
     println!("  W_fan;an = {:.6} MJ", ventilation.annual_w_fan);
@@ -142,7 +177,8 @@ fn epw001a_transmission_ventilation_demand_probe() {
     println!("  EDR reference Q_H;nd;net = {:.6} kWh/m²", reference_qh_per_m2);
     println!("  relative error = {:.3}%", relative_error * 100.0);
 
-    // First gate: the real chain is executable and finite. The 1% gate is
-    // deliberately not enabled until the documented V1 gaps are replaced.
+    // Gate remains intentionally disabled until the remaining documented NTA
+    // gaps (notably infiltration/pressure balance and any downstream demand
+    // discrepancies) are resolved against the EDR reference.
     assert!(qh_per_m2.is_finite() && qh_per_m2 > 0.0);
 }
