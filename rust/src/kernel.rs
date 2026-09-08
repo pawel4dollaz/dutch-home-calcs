@@ -61,7 +61,7 @@ pub fn calculate_construction(
 /// Unheated-space surfaces require an explicit b-factor. Ground and adjacent
 /// zone transfers require explicit data. Thermal bridges are added from their
 /// declared ψ·L and χ·count terms. Monthly energy uses the NTA monthly-hour
-/// convention (31/28/31/... days) and does not apply hidden correction factors.
+/// convention and does not apply hidden correction factors.
 pub fn calculate_transmission(
     project: &NtaProjectInput,
     zone: &ZoneInput,
@@ -137,25 +137,28 @@ pub fn calculate_transmission(
         }
     }
 
-    let annual_outdoor = project.climate.outdoor_temperature_c.iter().sum::<f64>() / 12.0;
-    let monthly_hours = [744.0, 672.0, 744.0, 720.0, 744.0, 720.0, 744.0, 744.0, 720.0, 744.0, 720.0, 744.0];
+    let month_hours = [744.0, 672.0, 744.0, 720.0, 744.0, 720.0, 744.0, 744.0, 720.0, 744.0, 720.0, 744.0];
+    let annual_hours: f64 = month_hours.iter().sum();
+    let annual_outdoor = project.climate.outdoor_temperature_c.iter().zip(month_hours.iter()).map(|(t, h)| t * h).sum::<f64>() / annual_hours;
     let mut monthly = [0.0; 12];
     let adjacent_by_id: HashMap<&str, &ZoneInput> = project.zones.iter().map(|z| (z.id.as_str(), z)).collect();
     for i in 0..12 {
         let theta_i = zone.indoor_temperature_c[i];
         let theta_e = project.climate.outdoor_temperature_c[i];
         let h_out = h_d + h_bridges;
-        let q_out = h_out * (theta_i - theta_e) * 0.001 * monthly_hours[i];
-        let q_u = h_u * (theta_i - theta_e) * 0.001 * monthly_hours[i];
-        let q_g = h_ground * (theta_i - annual_outdoor) * 0.001 * monthly_hours[i];
+        let q_out = h_out * (theta_i - theta_e) * 0.001 * month_hours[i];
+        let q_u = h_u * (theta_i - theta_e) * 0.001 * month_hours[i];
+        let q_g = h_ground * (theta_i - annual_outdoor) * 0.001 * month_hours[i];
         let mut q_a = 0.0;
         for surface in &zone.surfaces {
             if surface.boundary != Boundary::AdjacentHeatedZone { continue; }
             let adjacent = adjacent_by_id.get(surface.adjacent_zone_id.as_deref().unwrap_or(""))
                 .ok_or_else(|| KernelError::MissingAdjacentZone(surface.id.clone()))?;
-            let c = calculate_construction(constructions.get(surface.construction_id.as_str()).ok_or_else(|| KernelError::UnknownConstruction(surface.construction_id.clone()))?)?;
+            let construction = constructions.get(surface.construction_id.as_str())
+                .ok_or_else(|| KernelError::UnknownConstruction(surface.construction_id.clone()))?;
+            let c = calculate_construction(construction)?;
             let openings = opening_area_by_surface.get(surface.id.as_str()).copied().unwrap_or(0.0);
-            q_a += c.u_value_w_m2k * (surface.area_m2 - openings).max(0.0) * (theta_i - adjacent.indoor_temperature_c[i]) * 0.001 * monthly_hours[i];
+            q_a += c.u_value_w_m2k * (surface.area_m2 - openings).max(0.0) * (theta_i - adjacent.indoor_temperature_c[i]) * 0.001 * month_hours[i];
         }
         monthly[i] = q_out + q_u + q_g + q_a;
     }
