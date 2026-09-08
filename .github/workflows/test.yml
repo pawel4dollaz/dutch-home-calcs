@@ -21,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          cargo test --manifest-path rust/Cargo.toml -- --nocapture 2>&1 | tee cargo-test.log
+          cargo test --manifest-path rust/Cargo.toml 2>&1 | tee cargo-test.log
           status=${PIPESTATUS[0]}
           exit "$status"
       - name: Upload cargo failure log
