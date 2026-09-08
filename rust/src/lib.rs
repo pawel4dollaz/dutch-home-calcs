@@ -7,6 +7,7 @@
 
 pub mod input;
 pub mod kernel;
+pub mod ventilation;
 
 /// Exact upstream revision used by this kernel boundary.
 pub const OPENAEC_REV: &str = "6e8738c075719e2fc8fcf918d969406f98927b07";
