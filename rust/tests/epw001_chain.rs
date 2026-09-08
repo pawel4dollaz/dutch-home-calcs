@@ -6,11 +6,10 @@ use nta8800_demand::{calculate_demand, CoolingSetpoint, HeatingSetpoint, Interna
 use nta8800_model::geometry::Window;
 use nta8800_model::location::{Orientation, Tilt};
 use nta8800_model::time::MonthlyProfile;
-use nta8800_model::units::Energy;
 use nta8800_model::zoning::{Rekenzone, UsageFunction};
 use nta8800_tables::climate::de_bilt::de_bilt_climate_data;
 use nta8800_transmission::{calculate_transmission, BoundaryType, TransmissionElement};
-use nta8800_ventilation::{VentilationResult, VentilationSystem, WtwSpecification};
+use nta8800_ventilation::VentilationResult;
 
 fn slab_on_ground_conductance(floor_area_m2: f64, perimeter_m: f64, floor_u_value: f64) -> f64 {
     if !(floor_area_m2 > 0.0 && perimeter_m > 0.0 && floor_u_value > 0.0) {
@@ -114,8 +113,8 @@ fn epw001a_monthly_infiltration(
     const H: f64 = 5.4;
     const H_WINDWARD: f64 = 2.7;
     const N_LEA: f64 = 0.67;
-    // EPW001a: qv10;spec;reken = 0.70 dm³/(s·m²), ftype = 1.4.
-    let qv10_lea_ref = 0.70 * 1.4;
+    // EPW001a: qv10;spec;reken = 0.70 dm³/(s·m²), ftype = 1.4, fy = 0.7 (bouwjaar >= 2010).
+    let qv10_lea_ref = 0.70 * 1.4 * 0.7;
     let qv1_lea_ref = qv10_lea_ref * 96.0 * 3.6 / 10.0_f64.powf(N_LEA);
     let paths = [
         (0.40 * qv1_lea_ref, H_WINDWARD, 0.25_f64),
@@ -146,8 +145,6 @@ fn epw001a_monthly_infiltration(
             p_ref - RHO_REF * h * G * T_REF_K / theta_i_k
         };
 
-        // Mechanical supply/exhaust are fixed mass flows in the mass balance;
-        // infiltration paths change sign according to their pressure difference.
         let mass_sum = |p_ref: f64| {
             let mut sum = rho_supply * mechanical_supply_m3_h
                 - rho_i * mechanical_exhaust_m3_h;
