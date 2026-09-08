@@ -8,6 +8,7 @@
 pub mod demand;
 pub mod input;
 pub mod kernel;
+pub mod services;
 pub mod ventilation;
 
 /// Exact upstream revision used by this kernel boundary.
